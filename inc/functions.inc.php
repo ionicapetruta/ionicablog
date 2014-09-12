@@ -33,8 +33,7 @@ function retrieveEntries($db, $id = NULL)
         * single entry
         */
         // Load all entry titles
-        if(!is_array($e))
-        {
+        if (!is_array($e)) {
             $fulldisp = 1;
             $e = array(
                 'title' => 'No Entries Yet',
@@ -44,22 +43,28 @@ function retrieveEntries($db, $id = NULL)
     }
     // Add the $fulldisp flag to the end of the array
     array_push($e, $fulldisp);
-    return $e;
+
     // Return loaded data
+    return $e;
 }
-function sanitizeData($data)
-{
+
+/**
+ * Sanitize data.
+ *
+ * @param string $data
+ *   The data to be sanitized.
+ * @return array|string
+ *   The sanitized data.
+ */
+function sanitizeData($data) {
+
     // If $data is not an array, run strip_tags()
-    if(!is_array($data))
-    {
-    // Remove all tags except <a> tags
+    if (!is_array($data)) {
+        // Remove all tags except <a> tags
         return strip_tags($data, "<a>");
-    }
-    // If $data is an array, process each element
-    else
-    {
-    // Call sanitizeData recursively for each array element
+    } // If $data is an array, process each element
+    else {
+        // Call sanitizeData recursively for each array element
         return array_map('sanitizeData', $data);
     }
 }
-?>

@@ -1,32 +1,51 @@
 <?php
-function retrieveEntries($db, $id = NULL)
+
+/**
+ * Retrieves entries from database.
+ *
+ * @param object $db
+ * @param string $page
+ * @param null|string $url
+ * @return array|null
+ */
+function retrieveEntries($db, $page, $url = null)
 {
-    /*
-    * If an entry ID was supplied, load the associated entry
-    */
-    if (isset($id)) {
-        $sql = "SELECT title, entry FROM entries WHERE id=? LIMIT 1";
+//    // Set the fulldisp flag for multiple entries
+//    $fulldisp = 0;
+
+    // If an entry URL was supplied, load the associated entry.
+    if (isset($url)) {
+        $sql = "SELECT id, page, title, image, entry
+FROM entries
+WHERE url=?
+LIMIT 1";
         $stmt = $db->prepare($sql);
-        $stmt->execute(array($_GET['id']));
+        $stmt->execute(array($url));
         // Save the returned entry array
         $e = $stmt->fetch();
         // Set the fulldisp flag for a single entry
         $fulldisp = 1;
         // Load specified entry
-    } /*
-    * If no entry ID was supplied, load all entry titles
-    */
+    } // If no entry URL provided, load all entry info for the page
+
     else {
-        $sql = "SELECT id, title FROM entries ORDER BY created DESC";
-        // Loop through returned results and store as an array
-        foreach ($db->query($sql) as $row) {
-            $e[] = array(
-                'id' => $row['id'],
-                'title' => $row['title']
-            );
+        $sql = "SELECT id, page, title, image, entry, url
+FROM entries
+WHERE page=?
+ORDER BY created DESC";
+        $stmt = $db->prepare($sql);
+        $stmt->execute(array($page));
+        $e = null; // Declare the variable to avoid errors
+        while ($row = $stmt->fetch()) {
+//            if ($page == 'blog') {
+            $e[] = $row;
+            $fulldisp = 0;
+//            } else {
+//                $e = $row;
+//                $fulldisp = 1;
+//            }
         }
-        // Set the fulldisp flag for multiple entries
-        $fulldisp = 0;
+
         /*
         * If no entries were returned, display a default
         * message and set the fulldisp flag to display a
@@ -41,11 +60,29 @@ function retrieveEntries($db, $id = NULL)
             );
         }
     }
+
     // Add the $fulldisp flag to the end of the array
     array_push($e, $fulldisp);
 
     // Return loaded data
     return $e;
+}
+
+/**
+ *
+ * @param $page
+ * @param $url
+ */
+function adminLinks($page, $url)
+{
+    // Format the link to be followed for each option
+    $editURL = "/admin/$page/$url";
+    $deleteURL = "/admin/delete/$url";
+    // Make a hyperlink and add it to an array
+    $admin['edit'] = "<a href=\"$editURL\">edit</a>";
+    $admin['delete'] = "<a href=\"$deleteURL\">delete</a>";
+
+    return $admin;
 }
 
 /**
@@ -56,7 +93,8 @@ function retrieveEntries($db, $id = NULL)
  * @return array|string
  *   The sanitized data.
  */
-function sanitizeData($data) {
+function sanitizeData($data)
+{
 
     // If $data is not an array, run strip_tags()
     if (!is_array($data)) {
@@ -66,5 +104,75 @@ function sanitizeData($data) {
     else {
         // Call sanitizeData recursively for each array element
         return array_map('sanitizeData', $data);
+    }
+}
+
+
+/**
+ * MakeUrl.
+ * @param $title
+ * @return mixed
+ */
+function makeUrl($title)
+{
+    $patterns = array(
+        '/\s+/',
+        '/(?!-)\W+/'
+    );
+    $replacements = array('-', '');
+
+    return preg_replace($patterns, $replacements, strtolower($title));
+}
+
+/**
+ * @param database $db
+ * @param string $url
+ * @return string
+ */
+function confirmDelete($db, $url)
+{
+    $e = retrieveEntries($db, '', $url);
+
+    return <<<FORM
+    <form action="/admin.php" method="post">
+        <fieldset>
+            <legend>Are You Sure?</legend>
+            <p>Are you sure you want to delete the entry "$e[title]"?</p>
+            <input type="submit" name="submit" value="Yes" />
+            <input type="submit" name="submit" value="No" />
+            <input type="hidden" name="action" value="delete" />
+            <input type="hidden" name="url" value="$url" />
+        </fieldset>
+    </form>
+FORM;
+}
+
+/**
+ * @param database $db
+ * @param string $url
+ * @return mixed
+ */
+function deleteEntry($db, $url)
+{
+    $sql = "DELETE FROM entries WHERE url=? LIMIT 1";
+    $stmt = $db->prepare($sql);
+
+    return $stmt->execute(array($url));
+}
+
+/**
+ * @param null $img
+ * @param null $alt
+ * @return null|string
+ */
+function formatImage($img=NULL, $alt=NULL)
+{
+    if(isset($img))
+    {
+        return '<img src="'.$img.'" alt="'.$alt.'" />';
+    }
+    else
+    {
+        return NULL;
     }
 }

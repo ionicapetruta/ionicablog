@@ -1,3 +1,54 @@
+<?php
+/*
+* Include the necessary files
+*/
+include_once 'inc/functions.inc.php';
+include_once 'inc/db.inc.php';
+// Open a database connection
+$db = new PDO(DB_INFO, DB_USER, DB_PASS);
+if (isset($_GET['page'])) {
+    $page = htmlentities(strip_tags($_GET['page']));
+} else {
+    $page = 'blog';
+}
+if (isset($_POST['action']) && $_POST['action'] == 'delete') {
+    if ($_POST['submit'] == 'Yes') {
+        $url = htmlentities(strip_tags($_POST['url']));
+        if (deleteEntry($db, $url)) {
+            header("Location: /");
+            exit;
+        } else {
+            exit("Error deleting the entry!");
+        }
+    } else {
+        header("Location: /$url");
+        exit;
+    }
+}
+if (isset($_GET['url'])) {
+// Do basic sanitization of the url variable
+    $url = htmlentities(strip_tags($_GET['url']));
+    // Check if the entry should be deleted
+    if ($page == 'delete') {
+        $confirm = confirmDelete($db, $url);
+    }
+// Set the legend of the form
+    $legend = "Edit This Entry";
+// Load the entry to be edited
+    $e = retrieveEntries($db, $page, $url);
+// Save each entry field as individual variables
+    $id = $e['id'];
+    $title = $e['title'];
+    $entry = $e['entry'];
+} else {
+// Set the legend
+    $legend = "New Entry Submission";
+// Set variables to NULL if not editing
+    $id = NULL;
+    $title = NULL;
+    $entry = NULL;
+}
+?>
 <!DOCTYPE html
     PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -10,24 +61,39 @@
 </head>
 <body>
 <h1> Simple Blog Application </h1>
-
-<form method="post" action="inc/update.inc.php">
-    <fieldset>
-        <legend>New Entry Submission</legend>
-        <label>Title
-            <h1>
-                <input type="text" name="title" maxlength="150"/>
-            </h1>
-        </label>
-        <label>Entry
-            <h1>
-                <textarea name="entry" cols="45" rows="10"></textarea>
-            </h1>
-        </label>
-        <input type="submit" name="submit" value="Save Entry"/>
-        <input type="submit" name="submit" value="Cancel"/>
-    </fieldset>
-</form>
+<?php
+if ($page == 'delete'):
+{
+    echo $confirm;
+} else:
+    ?>
+    <form method="post" action="/inc/update.inc.php"
+          enctype="multipart/form-data">
+        <fieldset>
+            <legend><?php echo $legend ?></legend>
+            <label>Title <br/>
+                <input type="text" name="title" maxlength="150"
+                       value="<?php echo htmlentities($title) ?>"/>
+            </label>
+            <br/>
+            <label>Image <br/>
+                <input type="file" name="image"/>
+            </label>
+            <br/>
+            <label>Entry <br/>
+                <textarea name="entry" cols="45"
+                          rows="10"><?php echo sanitizeData($entry) ?></textarea>
+            </label>
+            <input type="hidden" name="id"
+                   value="<?php echo $id ?>"/>
+            <input type="hidden" name="page"
+                   value="<?php echo $page ?>"/>
+            <br/>
+            <input type="submit" name="submit" value="Save Entry"/>
+            <input type="submit" name="submit" value="Cancel"/>
+        </fieldset>
+    </form>
+<?php endif; ?>
 </body>
 </html>
 

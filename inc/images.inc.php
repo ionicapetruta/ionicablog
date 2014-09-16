@@ -18,6 +18,7 @@ class ImageHandler
      *
      * @param array $upload the array contained in $_FILES
      * @param bool $rename whether or not the image should be renamed
+     * @param bool $rename whether or not the image should be renamed
      * @return string the path to the resized uploaded file
      */
     public function processUploadedImage($file, $rename = true)
@@ -29,8 +30,8 @@ class ImageHandler
             throw new Exception('An error occurred with the upload!');
             exit;
         }
-        // Check that the directory exists
-        $this->checkSaveDir();
+        // Generate a resized image
+        $this->doImageResize($tmp);
         // Rename the file if the flag is set to TRUE
         if ($rename === true) {
             // Retrieve information about the image
@@ -177,6 +178,49 @@ class ImageHandler
             default:
                 return false;
                 break;
+        }
+    }
+
+    /**
+     * Generates a resampled and resized image
+     *
+     * Creates and saves a new image based on the new dimensions
+     * and image type-specific functions determined by other
+     * class methods.
+     *
+     * @param array $img the path to the upload
+     * @return void
+     */
+    private function doImageResize($img)
+    {
+        // Determine the new dimensions
+        $d = $this->getNewDims($img);
+        // Determine what functions to use
+        $funcs = $this->getImageFunctions($img);
+        // Create the image resources for resampling
+        $src_img = $funcs[0]($img);
+        $new_img = imagecreatetruecolor($d[0], $d[1]);
+        if (imagecopyresampled(
+            $new_img,
+            $src_img,
+            0,
+            0,
+            0,
+            0,
+            $d[0],
+            $d[1],
+            $d[2],
+            $d[3]
+        )
+        ) {
+            imagedestroy($src_img);
+            if ($new_img && $funcs[1]($new_img, $img)) {
+                imagedestroy($new_img);
+            } else {
+                throw new Exception('Failed to save the new image!');
+            }
+        } else {
+            throw new Exception('Could not resample the image!');
         }
     }
 }

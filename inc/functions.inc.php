@@ -15,7 +15,7 @@ function retrieveEntries($db, $page, $url = null)
 
     // If an entry URL was supplied, load the associated entry.
     if (isset($url)) {
-        $sql = "SELECT id, page, title, image, entry
+        $sql = "SELECT id, page, title, image, entry, created
 FROM entries
 WHERE url=?
 LIMIT 1";
@@ -29,7 +29,7 @@ LIMIT 1";
     } // If no entry URL provided, load all entry info for the page
 
     else {
-        $sql = "SELECT id, page, title, image, entry, url
+        $sql = "SELECT id, page, title, image, entry, url, created
 FROM entries
 WHERE page=?
 ORDER BY created DESC";
@@ -165,14 +165,11 @@ function deleteEntry($db, $url)
  * @param null $alt
  * @return null|string
  */
-function formatImage($img=NULL, $alt=NULL)
+function formatImage($img = null, $alt = null)
 {
-    if(isset($img))
-    {
-        return '<img src="'.$img.'" alt="'.$alt.'" />';
-    }
-    else
-    {
-        return NULL;
+    if (isset($img)) {
+        return '<img src="' . $img . '" alt="' . $alt . '" />';
+    } else {
+        return null;
     }
 }

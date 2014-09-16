@@ -16,7 +16,7 @@ if (isset($_GET['page'])) {
     $page = 'blog';
 }
 // Determine if an entry URL was passed
-$url = (isset($_GET['url'])) ? $_GET['url'] : NULL;
+$url = (isset($_GET['url'])) ? $_GET['url'] : null;
 // Load the entries
 $e = retrieveEntries($db, $page, $url);
 // Get the fulldisp flag and remove it from the array
@@ -33,6 +33,9 @@ $e = sanitizeData($e);
     <meta http-equiv="Content-Type"
           content="text/html;charset=utf-8"/>
     <link rel="stylesheet" href="/css/default.css" type="text/css"/>
+    <link rel="alternate" type="application/rss+xml"
+          title="My Simple Blog - RSS 2.0"
+          href="/simple_blog/feeds/rss.php"/>
     <title> Simple Blog </title>
 </head>
 <body>
@@ -57,7 +60,7 @@ $e = sanitizeData($e);
         <p> <?php echo $img, $e['entry'] ?> </p>
         <p>
             <?php echo $admin['edit'] ?>
-            <?php if ($page == 'blog') echo $admin['delete'] ?>
+            <?php if ($page == 'blog')  echo $admin['delete']  ?>
         </p>
         <?php if ($page == 'blog'): ?>
             <p class="backlink">
@@ -66,9 +69,9 @@ $e = sanitizeData($e);
         <?php endif; ?>
     <?php
     } // End the if statement
-// If the full display flag is 0, format linked entry titles
+    // If the full display flag is 0, format linked entry titles
     else {
-// Loop through each entry
+        // Loop through each entry
         foreach ($e as $entry) {
             ?>
             <p>
@@ -85,6 +88,11 @@ $e = sanitizeData($e);
     <p class="backlink">
         <a href="/admin/<?php echo $page ?>">
             Post a New Entry
+        </a>
+    </p>
+    <p>
+        <a href="/feeds/rss.php">
+            Subscribe via RSS!
         </a>
     </p>
 </div>

@@ -55,18 +55,28 @@ $e = sanitizeData($e);
         $admin = adminLinks($page, $url);
         // Format the image if one exists
         $img = formatImage($e['image'], $e['title']);
+        if ($page == 'blog') {
+            // Load the comment object
+            include_once 'inc/comments.inc.php';
+            $comments = new Comments();
+            $comment_disp = $comments->showComments($e['id']);
+            $comment_form = $comments->showCommentForm($e['id']);
+        } else {
+            $comment_form = null;
+        }
         ?>
         <h2> <?php echo $e['title'] ?> </h2>
         <p> <?php echo $img, $e['entry'] ?> </p>
         <p>
             <?php echo $admin['edit'] ?>
-            <?php if ($page == 'blog')  echo $admin['delete']  ?>
+            <?php if ($page == 'blog')  echo $admin['delete'] ?>
         </p>
         <?php if ($page == 'blog'): ?>
             <p class="backlink">
                 <a href="./">Back to Latest Entries</a>
             </p>
-        <?php endif; ?>
+            <h3> Comments for This Entry </h3>
+            <?php echo $comment_disp, $comment_form; endif; ?>
     <?php
     } // End the if statement
     // If the full display flag is 0, format linked entry titles
@@ -90,6 +100,7 @@ $e = sanitizeData($e);
             Post a New Entry
         </a>
     </p>
+
     <p>
         <a href="/feeds/rss.php">
             Subscribe via RSS!

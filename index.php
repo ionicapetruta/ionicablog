@@ -1,4 +1,5 @@
 <?php
+session_start();
 /*
 * Include the necessary files
 */
@@ -44,15 +45,27 @@ $e = sanitizeData($e);
     <li><a href="/blog/">Blog</a></li>
     <li><a href="/about/">About the Author</a></li>
 </ul>
-
+<?php if(isset($_SESSION['loggedin']) && $_SESSION['loggedin']==1): ?>
+    <p id="control_panel">
+        You are logged in!
+        <a href="/inc/update.inc.php?action=logout">Log out</a>.
+    </p>
+<?php endif; ?>
 <div id="entries">
     <?php
     // If the full display flag is set, show the entry
     if ($fulldisp == 1) {
         // Get the URL if one wasn't passed
         $url = (isset($url)) ? $url : $e['url'];
-        // Build the admin links
-        $admin = adminLinks($page, $url);
+        if(isset($_SESSION['loggedin']) && $_SESSION['loggedin'] == 1)
+        {
+            // Build the admin links
+            $admin = adminLinks($page, $url);
+        }
+        else
+        {
+            $admin = array('edit'=>NULL, 'delete'=>NULL);
+        }
         // Format the image if one exists
         $img = formatImage($e['image'], $e['title']);
         if ($page == 'blog') {
@@ -96,9 +109,15 @@ $e = sanitizeData($e);
 
 
     <p class="backlink">
+        <?php
+        if($page=='blog'
+        && isset($_SESSION['loggedin'])
+        && $_SESSION['loggedin'] == 1):
+        ?>
         <a href="/admin/<?php echo $page ?>">
             Post a New Entry
         </a>
+        <?php endif; ?>
     </p>
 
     <p>

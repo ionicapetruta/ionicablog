@@ -173,3 +173,26 @@ function formatImage($img = null, $alt = null)
         return null;
     }
 }
+
+/**
+ * @return string
+ */
+function createUserForm()
+{
+    return <<<FORM
+    <form action="/inc/update.inc.php" method="post">
+        <fieldset>
+            <legend>Create a New Administrator</legend>
+            <label>Username <br/>
+                <input type="text" name="username" maxlength="75" />
+            </label> <br/>
+            <label>Password <br/>
+                <input type="password" name="password" />
+            </label> <br/>
+            <input type="submit" name="submit" value="Create" />
+            <input type="submit" name="submit" value="Cancel" />
+            <input type="hidden" name="action" value="createuser" />
+        </fieldset>
+    </form>
+FORM;
+}

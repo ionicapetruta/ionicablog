@@ -1,4 +1,7 @@
 <?php
+session_start();
+// If the user is logged in, we can continue
+if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] == 1):
 /*
 * Include the necessary files
 */
@@ -26,27 +29,31 @@ if (isset($_POST['action']) && $_POST['action'] == 'delete') {
     }
 }
 if (isset($_GET['url'])) {
-// Do basic sanitization of the url variable
+    // Do basic sanitization of the url variable
     $url = htmlentities(strip_tags($_GET['url']));
     // Check if the entry should be deleted
     if ($page == 'delete') {
         $confirm = confirmDelete($db, $url);
     }
-// Set the legend of the form
+    // Set the legend of the form
     $legend = "Edit This Entry";
-// Load the entry to be edited
+    // Load the entry to be edited
     $e = retrieveEntries($db, $page, $url);
-// Save each entry field as individual variables
+    // Save each entry field as individual variables
     $id = $e['id'];
     $title = $e['title'];
     $entry = $e['entry'];
 } else {
-// Set the legend
+    // Check if we're creating a new user
+    if ($page == 'createuser') {
+        $create = createUserForm();
+    }
+    // Set the legend
     $legend = "New Entry Submission";
-// Set variables to NULL if not editing
-    $id = NULL;
-    $title = NULL;
-    $entry = NULL;
+    // Set variables to NULL if not editing
+    $id = null;
+    $title = null;
+    $entry = null;
 }
 ?>
 <!DOCTYPE html
@@ -65,6 +72,9 @@ if (isset($_GET['url'])) {
 if ($page == 'delete'):
 {
     echo $confirm;
+} elseif ($page == 'createuser'):
+{
+    echo $create;
 } else:
     ?>
     <form method="post" action="/inc/update.inc.php"
@@ -82,7 +92,9 @@ if ($page == 'delete'):
             <br/>
             <label>Entry <br/>
                 <textarea name="entry" cols="45"
-                          rows="10"><?php echo sanitizeData($entry) ?></textarea>
+                          rows="10"><?php echo sanitizeData(
+                        $entry
+                    ) ?></textarea>
             </label>
             <input type="hidden" name="id"
                    value="<?php echo $id ?>"/>
@@ -96,4 +108,41 @@ if ($page == 'delete'):
 <?php endif; ?>
 </body>
 </html>
-
+<?php
+/*
+* If we get here, the user is not logged in. Display a form
+* and ask them to log in.
+*/
+else:
+?>
+<!DOCTYPE html
+PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="Content-Type"
+          content="text/html;charset=utf-8" />
+    <link rel="stylesheet"
+          href="/simple_blog/css/default.css" type="text/css" />
+    <title> Please Log In </title>
+</head>
+<body>
+<form method="post"
+      action="/inc/update.inc.php"
+      enctype="multipart/form-data">
+    <fieldset>
+        <legend>Please Log In To Continue</legend>
+        <label>Username <br/>
+            <input type="text" name="username" maxlength="75" />
+        </label> <br/>
+        <label>Password <br/>
+            <input type="password" name="password"
+                   maxlength="150" />
+        </label> <br/>
+        <input type="hidden" name="action" value="login" />
+        <input type="submit" name="submit" value="Log In" />
+    </fieldset>
+</form>
+</body>
+</html>
+<?php endif; ?>

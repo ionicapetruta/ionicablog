@@ -45,7 +45,7 @@ $e = sanitizeData($e);
     <li><a href="/blog/">Blog</a></li>
     <li><a href="/about/">About the Author</a></li>
 </ul>
-<?php if(isset($_SESSION['loggedin']) && $_SESSION['loggedin']==1): ?>
+<?php if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] == 1): ?>
     <p id="control_panel">
         You are logged in!
         <a href="/inc/update.inc.php?action=logout">Log out</a>.
@@ -57,14 +57,11 @@ $e = sanitizeData($e);
     if ($fulldisp == 1) {
         // Get the URL if one wasn't passed
         $url = (isset($url)) ? $url : $e['url'];
-        if(isset($_SESSION['loggedin']) && $_SESSION['loggedin'] == 1)
-        {
+        if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] == 1) {
             // Build the admin links
             $admin = adminLinks($page, $url);
-        }
-        else
-        {
-            $admin = array('edit'=>NULL, 'delete'=>NULL);
+        } else {
+            $admin = array('edit' => null, 'delete' => null);
         }
         // Format the image if one exists
         $img = formatImage($e['image'], $e['title']);
@@ -74,18 +71,22 @@ $e = sanitizeData($e);
             $comments = new Comments();
             $comment_disp = $comments->showComments($e['id']);
             $comment_form = $comments->showCommentForm($e['id']);
+            // Generate a Post to Twitter link
+            $twitter = postToTwitter($e['title']);
         } else {
             $comment_form = null;
+            $twitter = NULL;
         }
         ?>
         <h2> <?php echo $e['title'] ?> </h2>
         <p> <?php echo $img, $e['entry'] ?> </p>
         <p>
             <?php echo $admin['edit'] ?>
-            <?php if ($page == 'blog')  echo $admin['delete'] ?>
+            <?php if ($page == 'blog') echo $admin['delete'] ?>
         </p>
         <?php if ($page == 'blog'): ?>
             <p class="backlink">
+                <a href="<?php echo $twitter ?>">Post to Twitter</a><br />
                 <a href="./">Back to Latest Entries</a>
             </p>
             <h3> Comments for This Entry </h3>
@@ -110,13 +111,14 @@ $e = sanitizeData($e);
 
     <p class="backlink">
         <?php
-        if($page=='blog'
-        && isset($_SESSION['loggedin'])
-        && $_SESSION['loggedin'] == 1):
-        ?>
-        <a href="/admin/<?php echo $page ?>">
-            Post a New Entry
-        </a>
+        if ($page == 'blog'
+            && isset($_SESSION['loggedin'])
+            && $_SESSION['loggedin'] == 1
+        ):
+            ?>
+            <a href="/admin/<?php echo $page ?>">
+                Post a New Entry
+            </a>
         <?php endif; ?>
     </p>
 

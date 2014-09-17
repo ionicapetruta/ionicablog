@@ -3,19 +3,25 @@ include_once 'db.inc.php';
 
 class Comments
 {
-    // Our database connection
     public $db;
-    // An array for containing the entries
     public $comments;
-
     // Upon class instantiation, open a database connection
+    /**
+     *  The construct.
+     *  Open a database connection and store it.
+     */
     public function __construct()
     {
-        // Open a database connection and store it
         $this->db = new PDO(DB_INFO, DB_USER, DB_PASS);
     }
 
     // Display a form for users to enter new comments with
+    /**
+     * Show comment form.
+     *
+     * @param $blog_id
+     * @return string
+     */
     public function showCommentForm($blog_id)
     {
         $errors = array(
@@ -31,7 +37,6 @@ class Comments
         } else {
             $error = null;
         }
-        // Check if session variables exist
         if (isset($_SESSION['c_name'])) {
             $n = $_SESSION['c_name'];
         } else {
@@ -47,7 +52,6 @@ class Comments
         } else {
             $c = null;
         }
-        // Generate a challenge question
         $challenge = $this->generateChallenge();
 
         return <<<FORM
@@ -72,49 +76,45 @@ class Comments
 FORM;
     }
 
-    // Save comments to the database
+    /**
+     * Save comment to the database.
+     *
+     * @param  string $p
+     * @return bool
+     */
     public function saveComment($p)
     {
-        // Save the comment information in a session
         $_SESSION['c_name'] = htmlentities($p['name'], ENT_QUOTES);
         $_SESSION['c_email'] = htmlentities($p['email'], ENT_QUOTES);
         $_SESSION['c_comment'] = htmlentities(
             $p['cmnt'],
             ENT_QUOTES
         );
-        // Make sure the email address is valid first
         if ($this->validateEmail($p['email']) === false) {
             $_SESSION['error'] = 2;
 
             return;
         }
-        // Make sure the challenge question was properly answered
         if (!$this->verifyResponse($p['s_q'], $p['s_1'], $p['s_2'])) {
             $_SESSION['error'] = 3;
 
             return;
         }
-        // Sanitize the data and store in variables
         $blog_id = htmlentities(strip_tags($p['blog_id']), ENT_QUOTES);
         $name = htmlentities(strip_tags($p['name']), ENT_QUOTES);
         $email = htmlentities(strip_tags($p['email']), ENT_QUOTES);
         $comment = htmlentities(strip_tags($p['comment']), ENT_QUOTES);
-        // Keep formatting of comments and remove extra whitespace
         $comment = nl2br(trim($comment));
-        // Generate and prepare the SQL command
         $sql = "INSERT INTO comments (blog_id, name, email, comment)
 VALUES (?, ?, ?, ?)";
         if ($stmt = $this->db->prepare($sql)) {
-            // Execute the command, free used memory, and return true
             $stmt->execute(array($blog_id, $name, $email, $comment));
             $stmt->closeCursor();
-            // Destroy the comment information to empty the form
             unset($_SESSION['c_name'], $_SESSION['c_email'],
             $_SESSION['c_comment'], $_SESSION['error']);
 
             return true;
         } else {
-            // If something went wrong, return false
             $_SESSION['error'] = 1;
 
             return;
@@ -122,23 +122,27 @@ VALUES (?, ?, ?, ?)";
     }
 
     /**
+     * This function check if the email is valid.
+     *
      * @param $email
      * @return bool
      */
     private function validateEmail($email)
     {
-        // Matches valid email addresses
         $p = '/^[\w-]+(\.[\w-]+)*@[a-z0-9-]+'
             . '(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/i';
 
-        // If a match is found, return TRUE, otherwise return FALSE
-        return (preg_match($p, $email)) ? true : false;
+             return (preg_match($p, $email)) ? true : false;
     }
 
     // Load all comments for a blog entry into memory
+    /**
+     * This function load all comments for a blog entry into memory.
+     *
+     * @param $blog_id
+     */
     public function retrieveComments($blog_id)
     {
-        // Get all the comments for the entry
         $sql = "SELECT id, name, email, comment, date
 FROM comments
 WHERE blog_id=?
@@ -162,28 +166,25 @@ ORDER BY date DESC";
         }
     }
 
-    // Generates HTML markup for displaying comments
+    /**
+     * Generates HTML markup for displaying comments.
+     *
+     * @param $blog_id
+     * @return null|string
+     */
     public function showComments($blog_id)
     {
-        // Initialize the variable in case no comments exist
         $display = null;
-        // Load the comments for the entry
         $this->retrieveComments($blog_id);
-        // Loop through the stored comments
         foreach ($this->comments as $c) {
-            // Prevent empty fields if no comments exist
             if (!empty($c['date']) && !empty($c['name'])) {
-                // Outputs similar to: July 8, 2009 at 4:39PM
                 $format = "F j, Y \a\\t g:iA";
-                // Convert $c['date'] to a timestamp, then format
                 $date = date($format, strtotime($c['date']));
-                // Generate a byline for the comment
                 $byline = "<span><strong>$c[name]</strong>
                 [Posted on $date]</span>";
                 if (isset($_SESSION['loggedin'])
                     && $_SESSION['loggedin'] == 1
                 ) {
-                    // Generate delete link for the comment display
                     $admin = "<a href=\"/simple_blog/inc/update.inc.php"
                         . "?action=comment_delete&id=$c[id]\""
                         . " class=\"admin\">delete</a>";
@@ -191,25 +192,26 @@ ORDER BY date DESC";
                     $admin = null;
                 }
             } else {
-                // If no comments exist, set $byline & $admin to NULL
                 $byline = null;
                 $admin = null;
             }
-            // Assemble the pieces into a formatted comment
             $display .= "<p class=\"comment\">$byline$c[comment]$admin</p>";
         }
 
-        // Return all the formatted comments as a string
         return $display;
     }
 
-    // Ensure the user really wants to delete the comment
+    /**
+     * Ensure the user really wants to delete the comment.
+     *
+     * @param number $id
+     * @return string
+     */
     public function confirmDelete($id)
     {
-        // Store the entry url if available
         if (isset($_SERVER['HTTP_REFERER'])) {
             $url = $_SERVER['HTTP_REFERER'];
-        } // Otherwise use the default view
+        }
         else {
             $url = '../';
         }
@@ -241,33 +243,38 @@ FORM;
     }
 
     // Removes the comment corresponding to $id from the database
+    /**
+     * Delete comment.
+     *
+     * @param number $id
+     * @return bool
+     */
     public function deleteComment($id)
     {
         $sql = "DELETE FROM comments
 WHERE id=?
 LIMIT 1";
         if ($stmt = $this->db->prepare($sql)) {
-            // Execute the command, free used memory, and return true
             $stmt->execute(array($id));
             $stmt->closeCursor();
 
             return true;
         } else {
-            // If something went wrong, return false
             return false;
         }
     }
 
+    /**
+     * This function generate challange.
+     *
+     * @return string
+     */
     private function generateChallenge()
     {
-        // Store two random numbers in an array
         $numbers = array(mt_rand(1, 4), mt_rand(1, 4));
-        // Store the correct answer in a session
         $_SESSION['challenge'] = $numbers[0] + $numbers[1];
-        // Convert the numbers to their ASCII codes
         $converted = array_map('ord', $numbers);
 
-        // Generate a math question as HTML markup
         return "
         <label>&#87;&#104;&#97;&#116;&#32;&#105;&#115;&#32;
                  &#$converted[0];&#32;&#43;&#32;&#$converted[1];&#63;
@@ -275,15 +282,18 @@ LIMIT 1";
         </label>";
     }
 
+    /**
+     * Check response.
+     *
+     * @param string $resp
+     * @return bool
+     */
     private function verifyResponse($resp)
     {
-        // Grab the session value and destroy it
         $val = $_SESSION['challenge'];
         unset($_SESSION['challenge']);
 
-        // Returns TRUE if equal, FALSE otherwise
         return $resp == $val;
     }
 }
-
 ?>

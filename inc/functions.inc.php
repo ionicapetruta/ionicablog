@@ -10,10 +10,6 @@
  */
 function retrieveEntries($db, $page, $url = null)
 {
-//    // Set the fulldisp flag for multiple entries
-//    $fulldisp = 0;
-
-    // If an entry URL was supplied, load the associated entry.
     if (isset($url)) {
         $sql = "SELECT id, page, title, image, entry, created
 FROM entries
@@ -21,13 +17,9 @@ WHERE url=?
 LIMIT 1";
         $stmt = $db->prepare($sql);
         $stmt->execute(array($url));
-        // Save the returned entry array
         $e = $stmt->fetch();
-        // Set the fulldisp flag for a single entry
         $fulldisp = 1;
-        // Load specified entry
-    } // If no entry URL provided, load all entry info for the page
-
+    }
     else {
         $sql = "SELECT id, page, title, image, entry, url, created
 FROM entries
@@ -35,23 +27,11 @@ WHERE page=?
 ORDER BY created DESC";
         $stmt = $db->prepare($sql);
         $stmt->execute(array($page));
-        $e = null; // Declare the variable to avoid errors
+        $e = null;
         while ($row = $stmt->fetch()) {
-//            if ($page == 'blog') {
             $e[] = $row;
             $fulldisp = 0;
-//            } else {
-//                $e = $row;
-//                $fulldisp = 1;
-//            }
         }
-
-        /*
-        * If no entries were returned, display a default
-        * message and set the fulldisp flag to display a
-        * single entry
-        */
-        // Load all entry titles
         if (!is_array($e)) {
             $fulldisp = 1;
             $e = array(
@@ -60,25 +40,21 @@ ORDER BY created DESC";
             );
         }
     }
-
-    // Add the $fulldisp flag to the end of the array
     array_push($e, $fulldisp);
-
-    // Return loaded data
     return $e;
 }
 
 /**
+ * Admin links.
  *
- * @param $page
- * @param $url
+ * @param string $page
+ * @param string $url
+ * @return mixed
  */
 function adminLinks($page, $url)
 {
-    // Format the link to be followed for each option
     $editURL = "/admin/$page/$url";
     $deleteURL = "/admin/delete/$url";
-    // Make a hyperlink and add it to an array
     $admin['edit'] = "<a href=\"$editURL\">edit</a>";
     $admin['delete'] = "<a href=\"$deleteURL\">delete</a>";
 
@@ -95,14 +71,10 @@ function adminLinks($page, $url)
  */
 function sanitizeData($data)
 {
-
-    // If $data is not an array, run strip_tags()
     if (!is_array($data)) {
-        // Remove all tags except <a> tags
         return strip_tags($data, "<a>");
-    } // If $data is an array, process each element
+    }
     else {
-        // Call sanitizeData recursively for each array element
         return array_map('sanitizeData', $data);
     }
 }
@@ -110,7 +82,7 @@ function sanitizeData($data)
 
 /**
  * MakeUrl.
- * @param $title
+ * @param string $title
  * @return mixed
  */
 function makeUrl($title)
@@ -125,9 +97,12 @@ function makeUrl($title)
 }
 
 /**
+ * Confirm the delete.
+ *
  * @param database $db
  * @param string $url
- * @return string
+ *  the URL of the entry to be deleted.
+ * @return form
  */
 function confirmDelete($db, $url)
 {
@@ -148,6 +123,10 @@ FORM;
 }
 
 /**
+ * Delete entry.
+ *
+ *This function place the url into a delete query.
+ *
  * @param database $db
  * @param string $url
  * @return mixed
@@ -161,6 +140,8 @@ function deleteEntry($db, $url)
 }
 
 /**
+ * Format images.
+ *
  * @param null $img
  * @param null $alt
  * @return null|string
@@ -175,6 +156,8 @@ function formatImage($img = null, $alt = null)
 }
 
 /**
+ * Create an user form.
+ *
  * @return string
  */
 function createUserForm()
@@ -198,24 +181,25 @@ FORM;
 }
 
 /**
+ * Shorten url.
+ *
  * @param $url
  */
 function shortenUrl($url)
 {
-    // Format a call to the bit.ly API
     $api = 'http://api.bit.ly/shorten';
     $param = 'version=2.0.1&longUrl=' . urlencode($url) . '&login=phpfab'
         . '&apiKey=R_7473a7c43c68a73ae08b68ef8e16388e&format=xml';
-    // Open a connection and load the response
     $uri = $api . "?" . $param;
     $response = file_get_contents($uri);
-    // Parse the output and return the shortened URL
     $bitly = simplexml_load_string($response);
 
     return $bitly->results->nodeKeyVal->shortUrl;
 }
 
 /**
+ * Post to Twitter.
+ *
  * @param $title
  * @return string
  */

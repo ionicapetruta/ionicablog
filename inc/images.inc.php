@@ -2,11 +2,15 @@
 
 class ImageHandler
 {
-    // The folder in which to save images
     public $save_dir;
     public $max_dims;
-
-    // Sets the $save_dir on instantiation
+    /**
+     * The construct.
+     *
+     * @param string $save_dir
+     *      Sets the $save_dir on instantiation.
+     * @param array $max_dims
+     */
     public function __construct($save_dir, $max_dims = array(350, 240))
     {
         $this->save_dir = $save_dir;
@@ -23,34 +27,24 @@ class ImageHandler
      */
     public function processUploadedImage($file, $rename = true)
     {
-        // Separate the uploaded file array
         list($name, $type, $tmp, $err, $size) = array_values($file);
-        // If an error occurred, throw an exception
         if ($err != UPLOAD_ERR_OK) {
             throw new Exception('An error occurred with the upload!');
             exit;
         }
-        // Generate a resized image
         $this->doImageResize($tmp);
-        // Rename the file if the flag is set to TRUE
         if ($rename === true) {
-            // Retrieve information about the image
             $img_ext = $this->getImageExtension($type);
             $name = $this->renameFile($img_ext);
-            // Create the full path to the image for saving
             $filepath = $this->save_dir . $name;
-            // Store the absolute path to move the image
             $absolute = $_SERVER['DOCUMENT_ROOT'] . $filepath;
-            // Save the image
             if (!move_uploaded_file($tmp, $absolute)) {
                 throw new Exception("Couldn't save the uploaded file!");
             }
 
             return $filepath;
-            // Finish processing
         }
     }
-
 
     /**
      * Generates a unique name for a file
@@ -65,10 +59,6 @@ class ImageHandler
      */
     private function renameFile($ext)
     {
-        /*
-        * Returns the current timestamp and a random number
-        * to avoid duplicate filenames
-        */
         return time() . '_' . mt_rand(1000, 9999) . $ext;
     }
 
@@ -106,16 +96,11 @@ class ImageHandler
     private
     function checkSaveDir()
     {
-        // Determines the path to check
         $path = $_SERVER['DOCUMENT_ROOT'] . $this->save_dir;
-        // Checks if the directory exists
         if (!is_dir($path)) {
-            // Creates the directory
             if (!mkdir($path, 0777, true)) {
-                // On failure, throws an error
                 throw new Exception("Can't create the directory!");
             }
-            // Create the directory
         }
     }
 
@@ -127,27 +112,17 @@ class ImageHandler
      */
     private function getNewDims($img)
     {
-        // Assemble the necessary variables for processing
         list($src_w, $src_h) = getimagesize($img);
         list($max_w, $max_h) = $this->max_dims;
-        // Check that the image is bigger than the maximum dimensions
         if ($src_w > $max_w || $src_h > $max_h) {
-            // Determine the scale to which the image will be resized
             $s = min($max_w / $src_w, $max_h / $src_h);
         } else {
-            /*
-            * If the image is smaller than the max dimensions, keep
-            * its dimensions by multiplying by 1
-            */
             $s = 1;
         }
-        // Get the new dimensions
         $new_w = round($src_w * $s);
         $new_h = round($src_h * $s);
 
-        // Return the new dimensions
         return array($new_w, $new_h, $src_w, $src_h);
-        // Get new image dimensions
     }
 
     /**
@@ -193,11 +168,8 @@ class ImageHandler
      */
     private function doImageResize($img)
     {
-        // Determine the new dimensions
         $d = $this->getNewDims($img);
-        // Determine what functions to use
         $funcs = $this->getImageFunctions($img);
-        // Create the image resources for resampling
         $src_img = $funcs[0]($img);
         $new_img = imagecreatetruecolor($d[0], $d[1]);
         if (imagecopyresampled(
@@ -224,5 +196,4 @@ class ImageHandler
         }
     }
 }
-
 ?>

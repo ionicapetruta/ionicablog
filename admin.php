@@ -1,13 +1,8 @@
 <?php
 session_start();
-// If the user is logged in, we can continue
 if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] == 1):
-/*
-* Include the necessary files
-*/
 include_once 'inc/functions.inc.php';
 include_once 'inc/db.inc.php';
-// Open a database connection
 $db = new PDO(DB_INFO, DB_USER, DB_PASS);
 if (isset($_GET['page'])) {
     $page = htmlentities(strip_tags($_GET['page']));
@@ -29,28 +24,20 @@ if (isset($_POST['action']) && $_POST['action'] == 'delete') {
     }
 }
 if (isset($_GET['url'])) {
-    // Do basic sanitization of the url variable
     $url = htmlentities(strip_tags($_GET['url']));
-    // Check if the entry should be deleted
     if ($page == 'delete') {
         $confirm = confirmDelete($db, $url);
     }
-    // Set the legend of the form
     $legend = "Edit This Entry";
-    // Load the entry to be edited
     $e = retrieveEntries($db, $page, $url);
-    // Save each entry field as individual variables
     $id = $e['id'];
     $title = $e['title'];
     $entry = $e['entry'];
 } else {
-    // Check if we're creating a new user
     if ($page == 'createuser') {
         $create = createUserForm();
     }
-    // Set the legend
     $legend = "New Entry Submission";
-    // Set variables to NULL if not editing
     $id = null;
     $title = null;
     $entry = null;
@@ -109,10 +96,6 @@ if ($page == 'delete'):
 </body>
 </html>
 <?php
-/*
-* If we get here, the user is not logged in. Display a form
-* and ask them to log in.
-*/
 else:
 ?>
 <!DOCTYPE html
